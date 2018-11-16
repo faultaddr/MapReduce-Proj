@@ -18,8 +18,8 @@ import java.util.*;
 
 public class FindAndCount {
 
-    static String INPUT_PATH = "hdfs://panyunyi-pc:9000/output/par*";
-    static String OUTPUT_PATH = "hdfs://panyunyi-pc:9000/count";
+    static String INPUT_PATH = "/user/2018st07/output/par*";
+    static String OUTPUT_PATH = "/user/2018st07/count";
     public static class FindMapper extends Mapper<Object, Text, Text, Text> {
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             StringTokenizer it = new StringTokenizer(value.toString());
@@ -56,8 +56,8 @@ public class FindAndCount {
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(Text.class);
         job.setOutputKeyClass(Text.class);
-        job.setMapOutputValueClass(Text.class);
-
+        job.setOutputValueClass(VIntWritable.class);
+        job.setNumReduceTasks(20);
         FileSystem fileSystem = FileSystem.get(new URI(INPUT_PATH), conf);
         if (fileSystem.exists(new Path(OUTPUT_PATH))) {
             fileSystem.delete(new Path(OUTPUT_PATH));

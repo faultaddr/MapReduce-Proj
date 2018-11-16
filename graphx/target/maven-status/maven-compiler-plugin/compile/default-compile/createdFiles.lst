@@ -1,6 +1,5 @@
 UnDirectedGraph.class
 FindAndCount$FindMapper.class
-UnDirectedGraph$CountReducer.class
 com/jyc/base/Util/CustomLog.class
 FindAndCount.class
 UnDirectedGraph$UserMapper.class
