@@ -1,7 +1,4 @@
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.google.gson.JsonArray;
-import org.apache.avro.data.Json;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -13,16 +10,13 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.util.GenericOptionsParser;
-import org.mortbay.log.Log;
 
-import org.apache.commons.collections.IteratorUtils;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.logging.Logger;
+
 
 /*
  *有向图变为无向图
@@ -31,27 +25,9 @@ import java.util.logging.Logger;
 
 
 public class UnDirectedGraph {
-    static String INPUT_PATH = "/data/graphTriangleCount/gplus_combined.unique.txt";
-    static String OUTPUT_PATH = "/user/2018st07/output";
+    static String INPUT_PATH;
+    static String OUTPUT_PATH;
 
-
-    public static int intersect(List<String> arr1, List<String> arr2) {
-        List<String> l = new LinkedList<String>();
-        Set<String> common = new HashSet<String>();
-        for (String str : arr1) {
-            if (!common.contains(str)) {
-                common.add(str);
-            }
-        }
-        for (String str : arr2) {
-            if (common.contains(str)) {
-                l.add(str);
-            }
-        }
-
-        int length = l.size();
-        return length;
-    }
 
     public static class UserMapper extends Mapper<Object, Text, Text, Text> {
 
@@ -78,131 +54,48 @@ public class UnDirectedGraph {
                     if (id1.compareTo(id2) < 0) {
                         context.write(id1, id2);
                         graphSet.add(tempStr1);
-                    } else {
+                    } else if(id1.compareTo(id2)>0){
                         context.write(id2, id1);
                         graphSet.add(tempStr2);
                     }
                 }
             }
-
         }
     }
 
 
-    public static class UserReducer extends Reducer<Text, Text, Text, VIntWritable> {
-        public static Map<String, List<String>> userMap = new HashMap<String, List<String>>();
+    public static class UserReducer extends Reducer<Text, Text, Text, NullWritable> {
         public static ArrayList<ArrayList<String>> list = new ArrayList<ArrayList<String>>();
 
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-            int count = 0;
             String userFirst = key.toString();
-            //String result;
             ArrayList<String> mList = new ArrayList<String>();
             for (Text value : values) {
 
                 String userSecond = value.toString();
-
-//                if (userMap.containsKey(userFirst)) {
-//                    if (!userMap.get(userFirst).contains(userSecond)) {
-//                        userMap.get(userFirst).add(userSecond);
-//                    }
-//                } else {
-//                    List<String> mList = new ArrayList<String>();
-//                    mList.add(userSecond);
-//                    userMap.put(userFirst, mList);
-//                }
                 mList.add(userSecond);
             }
-            for (List l : list) {
-                if (l.contains(userFirst)) {
-                    count += intersect(mList, l);
-                }
-            }
-            list.add(mList);
-/*            Iterator iterY = userMap.entrySet().iterator();
-            while(iterY.hasNext()){
-                Map.Entry entry = (Map.Entry) iterY.next();
-                if((entry.getKey().toString().compareTo(userFirst))<0){
-                    if((userMap.get(entry.getKey().toString())).contains(userFirst)){
-                        count+=intersect(userMap.get(entry.getKey().toString()),userMap.get(userFirst));
-                        Log.info(key.toString() + "   count= " + count);
-                    }
-                }
-            }*/
-/*            String result = JSON.toJSONString(list);
-            //result = userMap.get(userFirst).toString();
-            Log.info(key.toString() + "   count= " + count);
 
-            *//*
-            * 这个时候就可以操作了
-            *
-            *
-            *
-            * */
-            context.write(new Text(userFirst), new VIntWritable(count));
+            context.write(new Text(userFirst + "/" + mList.toString()), NullWritable.get());
         }
 
     }
 
-//    public static class CountReducer extends Reducer<Text, Text, Text, VIntWritable> {
-//
-//
-//        public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-//            int count = 0;
-//            Log.info(key.toString());
-////            String tempStr = "";
-////            for (Text value : values) {
-////                tempStr = (value.toString()).substring(1, value.toString().length() - 1);
-////            }
-////            String list[] = tempStr.split(",");
-////            List<String> newList = Arrays.asList(list);
-////            countMap.put(key.toString(), newList);
-////            countMapTemp.put(key.toString(), newList);
-////            countMap.putAll(UserReducer.userMap);
-////            countMapTemp.putAll(UserReducer.userMap);
-//            Iterator iterY = userMap.entrySet().iterator();
-//            String mKey = key.toString();
-//
-//            while (iterY.hasNext()) {
-//                Map.Entry entry = (Map.Entry) iterY.next();
-//                String y = (String) entry.getKey();
-//                if (userMap.get(mKey).contains(y)) {
-//                    int order = mKey.compareTo(y);
-//
-//                    if (order < 0) {
-//
-//                        int temp = intersect(userMap.get(mKey), (List<String>) entry.getValue());
-//                        count += temp;
-//
-//                    }
-//                }
-//            }
-//            //Log.info(key.toString() + "   count= " + count);
-//            context.write(new Text(mKey), new VIntWritable(count));
-//
-//        }
-//    }
-
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException, URISyntaxException {
         Configuration conf = new Configuration();
-//        String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-//        if (otherArgs.length != 2) {
-//            System.err.println("需要两个参数才能正常执行 in--out");
-//            System.exit(2);
-//        }
+        INPUT_PATH = args[0];
+        OUTPUT_PATH = args[1];
 
         Job job = new Job(conf);
         job.setJarByClass(UnDirectedGraph.class);
         job.setMapperClass(UserMapper.class);
-        //job.setCombinerClass(UserReducer.class);
-        //job.setReducerClass(CountReducer.class);
         job.setReducerClass(UserReducer.class);
         job.setSortComparatorClass(Text.Comparator.class);
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(Text.class);
         job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(VIntWritable.class);
+        job.setOutputValueClass(NullWritable.class);
         FileSystem fileSystem = FileSystem.get(new URI(INPUT_PATH), conf);
 
         if (fileSystem.exists(new Path(OUTPUT_PATH))) {
@@ -210,8 +103,6 @@ public class UnDirectedGraph {
         }
         FileInputFormat.addInputPath(job, new Path(INPUT_PATH));
         FileOutputFormat.setOutputPath(job, new Path(OUTPUT_PATH));
-
-
         job.waitForCompletion(true);
     }
 

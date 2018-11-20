@@ -18,13 +18,14 @@ import java.util.*;
 
 public class FindAndCount {
 
-    static String INPUT_PATH = "/user/2018st07/output/par*";
-    static String OUTPUT_PATH = "/user/2018st07/count";
+    static String INPUT_PATH;
+    static String OUTPUT_PATH;
+
     public static class FindMapper extends Mapper<Object, Text, Text, Text> {
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             StringTokenizer it = new StringTokenizer(value.toString());
             while (it.hasMoreTokens()) {
-                context.write(new Text(it.nextToken()),new Text(it.nextToken()));
+                context.write(new Text(it.nextToken()), new Text(it.nextToken()));
             }
         }
     }
@@ -36,8 +37,8 @@ public class FindAndCount {
 
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
 
-            for(Text value:values){
-                count+=Integer.parseInt(value.toString());
+            for (Text value : values) {
+                count += Integer.parseInt(value.toString());
             }
 
             Log.info(key.toString() + "   count= " + count);
@@ -48,8 +49,10 @@ public class FindAndCount {
 
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException, URISyntaxException {
-        Configuration conf=new Configuration();
-        Job job=new Job(conf,"FindAndCount");
+        INPUT_PATH = Util.FINDANDCOUNT_INPUT_PATH;
+        OUTPUT_PATH = Util.FINDANDCOUNT_OUTPUT_PATH;
+        Configuration conf = new Configuration();
+        Job job = new Job(conf, "FindAndCount");
         job.setJarByClass(FindAndCount.class);
         job.setMapperClass(FindMapper.class);
         job.setReducerClass(CountReducer.class);
@@ -57,7 +60,7 @@ public class FindAndCount {
         job.setMapOutputValueClass(Text.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(VIntWritable.class);
-        job.setNumReduceTasks(20);
+        job.setNumReduceTasks(1);
         FileSystem fileSystem = FileSystem.get(new URI(INPUT_PATH), conf);
         if (fileSystem.exists(new Path(OUTPUT_PATH))) {
             fileSystem.delete(new Path(OUTPUT_PATH));
