@@ -24,6 +24,14 @@ public class SingleCount {
     static String OUTPUT_PATH;
 
 
+    /**
+     *
+     * in-key: 序号
+     * in-value： userid+"/"+邻接表
+     * out-key：userid
+     * out-value：空
+     *
+     */
     public static class SingleMapper extends Mapper<Object, Text, Text, Text> {
 
 
@@ -38,10 +46,27 @@ public class SingleCount {
     }
 
 
+    /**
+     *
+     * in-key: userid
+     * in-value：空
+     * out-key：userid
+     * out-value：以此id作为三角形最小定点的三角形个数
+     *
+     *
+     *
+     */
     public static class SingleReducer extends Reducer<Text, Text, Text, VIntWritable> {
         public static Map<String, ArrayList<String>> linkedMap = new HashMap<String, ArrayList<String>>();
         int index = 0;
+        VIntWritable v = new VIntWritable();
 
+
+        /*
+        * 加载缓存（邻接矩阵）
+        *
+        *
+        * */
         public void setup(Reducer.Context context) throws IOException {
             try {
                 Configuration configuration = context.getConfiguration();
@@ -55,7 +80,8 @@ public class SingleCount {
                             ArrayList<String> l = new ArrayList<String>();
                             userFirst = line.split("/")[0];
                             String tempStr = line.split("/")[1];
-                            for (String str : tempStr.substring(1, tempStr.length() - 1).split(", ")) {
+                            tempStr = tempStr.replaceAll(" ", "");
+                            for (String str : tempStr.substring(1, tempStr.length() - 1).split(",")) {
                                 l.add(str);
                             }
                             linkedMap.put(userFirst, l);
@@ -73,7 +99,12 @@ public class SingleCount {
 
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             int count = 0;
-            VIntWritable v = new VIntWritable();
+
+            /*
+            *
+            * 依次计算
+            * 每个顶点和比它id大的顶点比较，看邻接节点中是否有较大的那个节点，再比对两个顶点邻接表的交集个数，即为三角形个数
+            * */
             for (Map.Entry entry : linkedMap.entrySet()) {
                 if (entry.getKey().toString().compareTo(key.toString()) > 0) {
                     if (linkedMap.get(key.toString()).contains(entry.getKey().toString())) {
@@ -86,7 +117,12 @@ public class SingleCount {
         }
 
     }
-
+/*
+*
+*
+* 计算交集
+*
+* */
     public static int intersect(List<String> arr1, List<String> arr2) {
         List<String> l = new LinkedList<String>();
         Set<String> common = new HashSet<String>();
@@ -120,6 +156,13 @@ public class SingleCount {
         job.setMapOutputValueClass(Text.class);
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(VIntWritable.class);
+
+
+        /*
+        *
+        * 使用reducer 个数
+        *
+        * */
         job.setNumReduceTasks(6);
         FileSystem fileSystem = FileSystem.get(new URI(Util.SINGLECOUNT_COUNT_INPUT_PATH), conf);
 

@@ -21,6 +21,14 @@ public class FindAndCount {
     static String INPUT_PATH;
     static String OUTPUT_PATH;
 
+    /**
+     *
+     * in-key: 序号
+     * in-value：id+“ ”+“数目“
+     * out-key：id
+     * out-value：数目
+     *
+     */
     public static class FindMapper extends Mapper<Object, Text, Text, Text> {
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             StringTokenizer it = new StringTokenizer(value.toString());
@@ -31,9 +39,19 @@ public class FindAndCount {
     }
 
 
+    /**
+     *
+     * in-key：id
+     * in-value：数目
+     * out-key：id
+     * out-value：累加至此的总和
+     *
+     *
+     */
     public static class CountReducer extends Reducer<Text, Text, Text, VIntWritable> {
 
         int count = 0;
+        VIntWritable v = new VIntWritable();
 
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
 
@@ -42,7 +60,8 @@ public class FindAndCount {
             }
 
             Log.info(key.toString() + "   count= " + count);
-            context.write(key, new VIntWritable(count));
+            v.set(count);
+            context.write(key, v);
 
         }
     }
