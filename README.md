@@ -15,4 +15,4 @@ each src in this repository means a single proj
 Do not copy our code simply for your own homework especially this year(2018)
 
 #### More details
-![My Blog](http://www.panyunyi.cn/wordpress/category/mr/)
+[My Blog](http://www.panyunyi.cn/wordpress/category/mr/)
